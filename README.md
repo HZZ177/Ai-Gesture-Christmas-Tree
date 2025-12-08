@@ -2,7 +2,7 @@
 
 > 一个充满魔法的 3D 圣诞树项目，通过 AI 手势识别让回忆在指尖绽放
 
-![image-20251208163734421](C:\Users\26041\AppData\Roaming\Typora\typora-user-images\image-20251208163734421.png)
+![image-20251208163734421](https://oss-kk.oss-cn-beijing.aliyuncs.com/ChristmasTree/image-20251208163734421.png)
 
 ## ✨ 在线体验
 

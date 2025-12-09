@@ -1377,7 +1377,9 @@
             focusTarget: null,
             hand: { detected: false, x: 0, y: 0 },
             rotation: { x: 0, y: 0 },
-            touch: { active: false, startX: 0, startY: 0, lastX: 0, lastY: 0 }
+            touch: { active: false, startX: 0, startY: 0, lastX: 0, lastY: 0 },
+            scatterAmount: 0,       // 0=树状, 1=完全爆炸 (连续值)
+            targetScatter: 0        // 目标爆炸程度
         };
 
         let scene, camera, renderer, composer;
@@ -1422,7 +1424,13 @@
                 if (photos.length) STATE.focusTarget = photos[Math.floor(Math.random()*photos.length)].mesh;
             } else {
                 STATE.mode = mode;
-                if (mode === 'TREE') STATE.focusTarget = null;
+                if (mode === 'TREE') {
+                    STATE.focusTarget = null;
+                    STATE.targetScatter = 0;  // 树状模式
+                } else if (mode === 'SCATTER') {
+                    STATE.focusTarget = null;
+                    STATE.targetScatter = 1;  // 完全爆炸
+                }
             }
         };
 
@@ -1477,9 +1485,8 @@
             createTextures();
             createParticles();
             createDust();
-            createMagicParticles();   // 魔法粒子
-            createSparkles();          // 闪烁星光
-            createRingParticles();     // 光环粒子
+            createGlowParticles();     // 高性能发光粒子云 (3000个)
+            createRingParticles();     // 装饰光环粒子
             loadPredefinedImages();
             setupPostProcessing();
             setupEvents();
@@ -1695,52 +1702,64 @@
                 this.posScatter.set(rScatter * Math.sin(phi) * Math.cos(theta), rScatter * Math.sin(phi) * Math.sin(theta), rScatter * Math.cos(phi));
             }
             update(dt, mode, focusTargetMesh) {
-                let target = (mode === 'SCATTER') ? this.posScatter : this.posTree;
-                if (mode === 'FOCUS') {
-                    if (this.mesh === focusTargetMesh) {
-                        // 根据屏幕比例为移动端和桌面分别设定聚焦位置
-                        const isPortrait = window.innerHeight > window.innerWidth;
-                        const desiredWorldPos = isPortrait
-                            ? new THREE.Vector3(-2.2, 1.2, 40)   // 移动端：稍远一点防止裁切
-                            : new THREE.Vector3(0, 1, 35);    // 桌面端
-                        const invMatrix = new THREE.Matrix4().copy(mainGroup.matrixWorld).invert();
-                        target = desiredWorldPos.applyMatrix4(invMatrix);
-                    } else target = this.posScatter;
+                const scatter = STATE.scatterAmount; // 使用连续爆炸值
+                
+                // 根据 scatterAmount 在树位置和爆炸位置之间插值
+                const target = TMP_VEC3_A.copy(this.posTree).lerp(this.posScatter, scatter);
+                
+                if (mode === 'FOCUS' && this.mesh === focusTargetMesh) {
+                    const isPortrait = window.innerHeight > window.innerWidth;
+                    const desiredWorldPos = isPortrait
+                        ? new THREE.Vector3(-2.2, 1.2, 40)
+                        : new THREE.Vector3(0, 1, 35);
+                    const invMatrix = TMP_MAT4_A.copy(mainGroup.matrixWorld).invert();
+                    target.copy(desiredWorldPos.applyMatrix4(invMatrix));
                 }
-                const lerpSpeed = (mode === 'FOCUS' && this.mesh === focusTargetMesh) ? 5.0 : 2.0; 
+                
+                const lerpSpeed = (mode === 'FOCUS' && this.mesh === focusTargetMesh) ? 5.0 : 3.0; 
                 this.mesh.position.lerp(target, lerpSpeed * dt);
 
-                if (mode === 'SCATTER') {
-                    this.mesh.rotation.x += this.spinSpeed.x * dt;
-                    this.mesh.rotation.y += this.spinSpeed.y * dt;
-                    this.mesh.rotation.z += this.spinSpeed.z * dt; 
-                } else if (mode === 'TREE') {
+                // 旋转：根据爆炸程度混合旋转效果
+                if (scatter > 0.1) {
+                    // 爆炸时旋转，旋转速度与爆炸程度成比例
+                    this.mesh.rotation.x += this.spinSpeed.x * dt * scatter;
+                    this.mesh.rotation.y += this.spinSpeed.y * dt * scatter;
+                    this.mesh.rotation.z += this.spinSpeed.z * dt * scatter; 
+                }
+                if (scatter < 0.9) {
+                    // 树状时的旋转校正
+                    const treeWeight = 1 - scatter;
                     if (this.type === 'PHOTO') {
-                        this.mesh.lookAt(0, this.mesh.position.y, 0);
-                        this.mesh.rotateY(Math.PI);
+                        // 照片朝向中心
                     } else {
-                        this.mesh.rotation.x = THREE.MathUtils.lerp(this.mesh.rotation.x, 0, dt);
-                        this.mesh.rotation.z = THREE.MathUtils.lerp(this.mesh.rotation.z, 0, dt);
-                        this.mesh.rotation.y += 0.5 * dt; 
+                        this.mesh.rotation.x = THREE.MathUtils.lerp(this.mesh.rotation.x, 0, dt * treeWeight * 2);
+                        this.mesh.rotation.z = THREE.MathUtils.lerp(this.mesh.rotation.z, 0, dt * treeWeight * 2);
+                        this.mesh.rotation.y += 0.5 * dt * treeWeight; 
                     }
                 }
+                
                 if (mode === 'FOCUS' && this.mesh === focusTargetMesh) this.mesh.lookAt(camera.position); 
 
+                // 缩放：根据爆炸程度调整
                 let s = this.baseScale;
                 if (this.isDust) {
                     s = this.baseScale * (0.8 + 0.4 * Math.sin(clock.elapsedTime * 4 + this.mesh.id));
-                    if (mode === 'TREE') s = 0; 
-                } else if (mode === 'SCATTER' && this.type === 'PHOTO') s = this.baseScale * 2.5; 
-                else if (mode === 'FOCUS') {
+                    // 尘埃在树状时隐藏，爆炸时显示
+                    s *= scatter;
+                } else if (this.type === 'PHOTO') {
+                    // 照片在爆炸时放大
+                    s = this.baseScale * (1 + scatter * 1.5);
+                }
+                
+                if (mode === 'FOCUS') {
                     const isPortrait = window.innerHeight > window.innerWidth;
                     if (this.mesh === focusTargetMesh) {
-                        // 移动端略小一点，桌面使用全局 FOCUS_SCALE
                         s = isPortrait ? 2.4 : FOCUS_SCALE;
                     } else {
                         s = this.baseScale * 1.0;
                     }
                 }
-                this.mesh.scale.lerp(new THREE.Vector3(s,s,s), 4*dt);
+                this.mesh.scale.lerp(TMP_VEC3_B.set(s,s,s), 4*dt);
             }
         }
 
@@ -1812,186 +1831,181 @@
             }
         }
 
-        // 创建魔法粒子系统（螺旋上升的发光粒子）
-        let magicParticles = [];
-        function createMagicParticles() {
-            const colors = [0xff6b6b, 0xffd93d, 0x6bcb77, 0x4d96ff, 0xff6bff, 0xffffff];
-            const particleCount = 150;
-            
-            for (let i = 0; i < particleCount; i++) {
-                const geo = new THREE.SphereGeometry(0.05 + Math.random() * 0.08, 8, 8);
-                const color = colors[Math.floor(Math.random() * colors.length)];
-                const mat = new THREE.MeshBasicMaterial({ 
-                    color: color, 
-                    transparent: true, 
-                    opacity: 0.8 
-                });
-                const mesh = new THREE.Mesh(geo, mat);
-                
-                // 初始位置在树的范围内
-                const angle = Math.random() * Math.PI * 2;
-                const radius = 2 + Math.random() * 6;
-                const y = -12 + Math.random() * 24;
-                mesh.position.set(
-                    Math.cos(angle) * radius,
-                    y,
-                    Math.sin(angle) * radius
-                );
-                
-                mainGroup.add(mesh);
-                magicParticles.push({
-                    mesh,
-                    baseAngle: angle,
-                    baseRadius: radius,
-                    speed: 0.3 + Math.random() * 0.5,
-                    phase: Math.random() * Math.PI * 2,
-                    color: color
-                });
+        // ========== 高性能粒子云系统 (参考React Three Fiber风格) ==========
+        const PARTICLE_COUNT = 8000;
+        let pointsSystem = null;
+        let currentPositions = null;
+        let basePositions = null;
+        let currentScale = 1.0;
+
+        // 创建发光粒子纹理（参考代码的方式）
+        function createGlowTexture() {
+            const canvas = document.createElement('canvas');
+            canvas.width = 32;
+            canvas.height = 32;
+            const ctx = canvas.getContext('2d');
+            if (ctx) {
+                const gradient = ctx.createRadialGradient(16, 16, 0, 16, 16, 16);
+                gradient.addColorStop(0, 'rgba(255,255,255,1)');
+                gradient.addColorStop(0.4, 'rgba(255,255,255,0.5)');
+                gradient.addColorStop(1, 'rgba(0,0,0,0)');
+                ctx.fillStyle = gradient;
+                ctx.fillRect(0, 0, 32, 32);
             }
+            return new THREE.CanvasTexture(canvas);
         }
 
-        // 创建闪烁星光粒子
-        let sparkleParticles = [];
-        function createSparkles() {
-            const sparkleCount = 80;
+        // 生成圣诞树形状的粒子位置
+        function generateTreePositions() {
+            const positions = new Float32Array(PARTICLE_COUNT * 3);
             
-            for (let i = 0; i < sparkleCount; i++) {
-                // 创建十字形星光
-                const group = new THREE.Group();
-                const mat = new THREE.MeshBasicMaterial({ 
-                    color: 0xffffff, 
-                    transparent: true, 
-                    opacity: 0.9 
-                });
+            for (let i = 0; i < PARTICLE_COUNT; i++) {
+                const i3 = i * 3;
                 
-                const h1 = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.15, 0.02), mat);
-                const h2 = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.02, 0.02), mat);
-                group.add(h1);
-                group.add(h2);
-                
-                // 随机位置在树形范围内
-                const t = Math.random();
-                const y = (t * CONFIG.particles.treeHeight) - (CONFIG.particles.treeHeight / 2);
-                const maxR = CONFIG.particles.treeRadius * (1.0 - t) + 1;
-                const angle = Math.random() * Math.PI * 2;
-                const r = Math.random() * maxR;
-                
-                group.position.set(
-                    Math.cos(angle) * r,
-                    y,
-                    Math.sin(angle) * r
-                );
-                
-                mainGroup.add(group);
-                sparkleParticles.push({
-                    mesh: group,
-                    phase: Math.random() * Math.PI * 2,
-                    twinkleSpeed: 2 + Math.random() * 4
-                });
-            }
-        }
-
-        // 创建光环粒子（围绕树旋转的光带）
-        let ringParticles = [];
-        function createRingParticles() {
-            const ringCount = 5; // 光环层数
-            const particlesPerRing = 40;
-            const colors = [0xffd700, 0xff6b6b, 0x4ecdc4, 0xffffff, 0xff69b4];
-            
-            for (let ring = 0; ring < ringCount; ring++) {
-                const y = -8 + ring * 5;
-                const radius = 6 - ring * 0.8;
-                const color = colors[ring];
-                
-                for (let i = 0; i < particlesPerRing; i++) {
-                    const geo = new THREE.SphereGeometry(0.06, 6, 6);
-                    const mat = new THREE.MeshBasicMaterial({ 
-                        color: color, 
-                        transparent: true, 
-                        opacity: 0.7 
-                    });
-                    const mesh = new THREE.Mesh(geo, mat);
+                // 80% 树形分布，20% 装饰灯光
+                if (i < PARTICLE_COUNT * 0.8) {
+                    // 树形螺旋分布
+                    const t = Math.random();
+                    const y = t * 20 - 10; // -10 到 10
+                    const maxRadius = 8 * (1 - t * 0.9); // 顶部窄底部宽
+                    const angle = t * Math.PI * 8 + Math.random() * Math.PI * 2;
+                    const r = Math.random() * maxRadius;
                     
-                    const angle = (i / particlesPerRing) * Math.PI * 2;
-                    mesh.position.set(
-                        Math.cos(angle) * radius,
-                        y,
-                        Math.sin(angle) * radius
-                    );
+                    positions[i3] = Math.cos(angle) * r;
+                    positions[i3 + 1] = y;
+                    positions[i3 + 2] = Math.sin(angle) * r;
+                } else {
+                    // 装饰灯光 - 球形分布
+                    const theta = Math.random() * Math.PI * 2;
+                    const phi = Math.acos(2 * Math.random() - 1);
+                    const r = 3 + Math.random() * 10;
                     
-                    mainGroup.add(mesh);
-                    ringParticles.push({
-                        mesh,
-                        ring,
-                        baseAngle: angle,
-                        radius,
-                        y,
-                        speed: 0.5 + ring * 0.2
-                    });
+                    positions[i3] = r * Math.sin(phi) * Math.cos(theta);
+                    positions[i3 + 1] = r * Math.sin(phi) * Math.sin(theta);
+                    positions[i3 + 2] = r * Math.cos(phi);
                 }
             }
+            return positions;
         }
 
-        // 更新魔法粒子
-        function updateMagicParticles(time) {
-            magicParticles.forEach((p, i) => {
-                // 螺旋上升
-                p.mesh.position.y += p.speed * 0.02;
-                if (p.mesh.position.y > 14) {
-                    p.mesh.position.y = -12;
+        // 生成颜色
+        function generateColors() {
+            const colors = new Float32Array(PARTICLE_COUNT * 3);
+            const colorOptions = [
+                [0.2, 0.8, 0.3],   // 绿色（树）
+                [0.1, 0.9, 0.4],   // 亮绿
+                [0.3, 0.7, 0.2],   // 深绿
+                [1.0, 0.9, 0.3],   // 金色
+                [1.0, 0.3, 0.3],   // 红色
+                [1.0, 1.0, 1.0],   // 白色
+                [0.3, 0.7, 1.0],   // 蓝色
+                [1.0, 0.5, 0.8],   // 粉色
+            ];
+            
+            for (let i = 0; i < PARTICLE_COUNT; i++) {
+                const i3 = i * 3;
+                let c;
+                
+                if (i < PARTICLE_COUNT * 0.6) {
+                    // 树叶 - 绿色系
+                    c = colorOptions[Math.floor(Math.random() * 3)];
+                } else {
+                    // 装饰 - 彩色
+                    c = colorOptions[3 + Math.floor(Math.random() * 5)];
                 }
                 
-                // 螺旋运动
-                const newAngle = p.baseAngle + time * p.speed + p.phase;
-                const wobble = Math.sin(time * 2 + p.phase) * 0.5;
-                p.mesh.position.x = Math.cos(newAngle) * (p.baseRadius + wobble);
-                p.mesh.position.z = Math.sin(newAngle) * (p.baseRadius + wobble);
-                
-                // 闪烁效果
-                p.mesh.material.opacity = 0.4 + Math.sin(time * 3 + p.phase) * 0.4;
-                
-                // 缩放脉动
-                const scale = 0.8 + Math.sin(time * 4 + p.phase) * 0.3;
-                p.mesh.scale.setScalar(scale);
-            });
+                colors[i3] = c[0];
+                colors[i3 + 1] = c[1];
+                colors[i3 + 2] = c[2];
+            }
+            return colors;
         }
 
-        // 更新闪烁星光
-        function updateSparkles(time) {
-            sparkleParticles.forEach(p => {
-                // 闪烁
-                const twinkle = Math.sin(time * p.twinkleSpeed + p.phase);
-                p.mesh.children.forEach(child => {
-                    child.material.opacity = 0.3 + twinkle * 0.6;
-                });
-                
-                // 旋转
-                p.mesh.rotation.z = time * 2 + p.phase;
-                
-                // 缩放脉动
-                const scale = 0.5 + twinkle * 0.5;
-                p.mesh.scale.setScalar(scale);
+        // 创建粒子系统
+        function createGlowParticles() {
+            const geometry = new THREE.BufferGeometry();
+            
+            basePositions = generateTreePositions();
+            currentPositions = new Float32Array(basePositions);
+            const colors = generateColors();
+            
+            geometry.setAttribute('position', new THREE.BufferAttribute(currentPositions, 3));
+            geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+            
+            const material = new THREE.PointsMaterial({
+                size: 0.15,  // 较大的粒子（参考代码是0.12）
+                map: createGlowTexture(),
+                vertexColors: true,
+                transparent: true,
+                opacity: 1.0,
+                blending: THREE.AdditiveBlending,
+                depthWrite: false,
+                sizeAttenuation: true
             });
+            
+            pointsSystem = new THREE.Points(geometry, material);
+            mainGroup.add(pointsSystem);
         }
 
-        // 更新光环粒子
-        function updateRingParticles(time) {
-            ringParticles.forEach(p => {
-                const angle = p.baseAngle + time * p.speed;
-                p.mesh.position.x = Math.cos(angle) * p.radius;
-                p.mesh.position.z = Math.sin(angle) * p.radius;
+        // 更新粒子系统
+        function updateGlowParticles(time, dt) {
+            if (!pointsSystem) return;
+            
+            const openness = STATE.scatterAmount; // 0-1 手张开程度
+            
+            // 目标缩放：手张开时放大（参考代码的逻辑）
+            const MIN_SCALE = 0.8;
+            const MAX_SCALE = 2.5;
+            const targetScale = MIN_SCALE + openness * (MAX_SCALE - MIN_SCALE);
+            
+            // 平滑插值缩放
+            const lerpFactor = 4.0 * dt;
+            currentScale += (targetScale - currentScale) * lerpFactor;
+            
+            // 更新粒子位置
+            const positions = pointsSystem.geometry.attributes.position.array;
+            
+            for (let i = 0; i < PARTICLE_COUNT; i++) {
+                const i3 = i * 3;
                 
-                // 上下波动
-                p.mesh.position.y = p.y + Math.sin(angle * 3) * 0.3;
+                // 基础位置
+                let bx = basePositions[i3];
+                let by = basePositions[i3 + 1];
+                let bz = basePositions[i3 + 2];
                 
-                // 透明度变化
-                p.mesh.material.opacity = 0.4 + Math.sin(angle * 2) * 0.3;
-            });
+                // 装饰灯光（后20%）在手张开时额外扩散
+                let individualScale = currentScale;
+                if (i >= PARTICLE_COUNT * 0.8 && openness > 0.3) {
+                    individualScale = currentScale * (1.0 + openness * 0.8);
+                }
+                
+                // 应用缩放
+                positions[i3] = bx * individualScale;
+                positions[i3 + 1] = by * individualScale;
+                positions[i3 + 2] = bz * individualScale;
+            }
+            
+            pointsSystem.geometry.attributes.position.needsUpdate = true;
+            
+            // 自动旋转
+            pointsSystem.rotation.y += dt * 0.15;
         }
+
+        // 兼容函数
+        function createRingParticles() {}
+        function updateRingParticles() {}
+        function createMagicParticles() {}
+        function createCloudParticles() {}
+        function createFireflies() {}
+        function createSparkles() {}
+        function updateMagicParticles() {}
+        function updateCloudParticles() {}
+        function updateFireflies() {}
+        function updateSparkles() {}
 
         function addPhotoToScene(texture) {
             const frameGeo = new THREE.BoxGeometry(1.4, 1.4, 0.05);
-            const frameMat = new THREE.MeshStandardMaterial({ color: CONFIG.colors.champagneGold, metalness: 1.0, roughness: 0.1 });
+            const frameMat = new THREE.MeshStandardMaterial({ color: CONFIG.colors.champagneGold, metalness: 0.3, roughness: 0.7 });
             const frame = new THREE.Mesh(frameGeo, frameMat);
             let width = 1.2; let height = 1.2;
             if (texture.image) {
@@ -2347,23 +2361,59 @@
                 const wrist = lm[0]; const middleMCP = lm[9]; 
                 const handSize = Math.hypot(middleMCP.x - wrist.x, middleMCP.y - wrist.y);
                 if (handSize < 0.02) return;
-                const tips = [lm[8], lm[12], lm[16], lm[20]];
-                let avgTipDist = 0; tips.forEach(t => avgTipDist += Math.hypot(t.x - wrist.x, t.y - wrist.y)); avgTipDist /= 4;
-                const pinchDist = Math.hypot(lm[4].x - lm[8].x, lm[4].y - lm[8].y);
-                const extensionRatio = avgTipDist / handSize; const pinchRatio = pinchDist / handSize;
                 
-                debugInfo.innerText = `Gesture Detected: ${STATE.mode}`;
-
-                if (extensionRatio < 1.5) { STATE.mode = 'TREE'; STATE.focusTarget = null; }
-                else if (pinchRatio < 0.35) {
+                // 计算所有手指尖到手腕的平均距离
+                const tips = [lm[4], lm[8], lm[12], lm[16], lm[20]]; // 包含大拇指
+                let avgTipDist = 0; 
+                tips.forEach(t => avgTipDist += Math.hypot(t.x - wrist.x, t.y - wrist.y)); 
+                avgTipDist /= tips.length;
+                
+                const extensionRatio = avgTipDist / handSize;
+                
+                // 连续爆炸控制：手张开程度映射到 0-1
+                const minRatio = 1.2;  // 握拳阈值
+                const maxRatio = 1.6;  // 完全张开阈值
+                
+                // 计算爆炸程度 (0-1)
+                let scatter = (extensionRatio - minRatio) / (maxRatio - minRatio);
+                scatter = Math.max(0, Math.min(1, scatter)); // 限制在 0-1 范围
+                
+                STATE.targetScatter = scatter;
+                
+                // 检测捏合手势（拇指和食指距离）
+                const pinchDist = Math.hypot(lm[4].x - lm[8].x, lm[4].y - lm[8].y);
+                const pinchRatio = pinchDist / handSize;
+                
+                // 只有在扩散状态（scatter > 0.5）才能捏合放大照片
+                if (scatter > 0.5 && pinchRatio < 0.4) {
                     if (STATE.mode !== 'FOCUS') {
                         STATE.mode = 'FOCUS';
                         const photos = particleSystem.filter(p => p.type === 'PHOTO');
-                        if (photos.length) STATE.focusTarget = photos[Math.floor(Math.random()*photos.length)].mesh;
+                        if (photos.length) {
+                            STATE.focusTarget = photos[Math.floor(Math.random() * photos.length)].mesh;
+                        }
                     }
-                } else if (extensionRatio > 1.7) { STATE.mode = 'SCATTER'; STATE.focusTarget = null; }
+                    return;
+                }
+                
+                // 收缩时自动取消聚焦，照片回到树上
+                if (scatter < 0.3) {
+                    STATE.mode = 'TREE';
+                    STATE.focusTarget = null;
+                } else if (scatter > 0.9) {
+                    STATE.mode = 'SCATTER';
+                    STATE.focusTarget = null;
+                } else {
+                    // 中间状态，如果之前不是FOCUS就设为BLEND
+                    if (STATE.mode !== 'FOCUS') {
+                        STATE.mode = 'BLEND';
+                    }
+                }
+                
             } else {
                 STATE.hand.detected = false;
+                // 没有检测到手时，缓慢回到树状
+                STATE.targetScatter = 0;
             }
         }
         function setupEvents() {
@@ -2411,38 +2461,42 @@
             requestAnimationFrame(animate);
             const dt = clock.getDelta();
 
+            // 平滑更新爆炸程度
+            const scatterLerpSpeed = 3.0; // 爆炸过渡速度
+            STATE.scatterAmount += (STATE.targetScatter - STATE.scatterAmount) * scatterLerpSpeed * dt;
+            STATE.scatterAmount = Math.max(0, Math.min(1, STATE.scatterAmount));
+
             // 交互逻辑核心：手势优先 > 触摸 > 自动旋转
+            const scatter = STATE.scatterAmount;
+            
             if (STATE.hand.detected) {
-                // 手势控制
-                if (STATE.mode === 'SCATTER') {
-                    const targetRotY = STATE.hand.x * Math.PI * 0.9; 
-                    const targetRotX = STATE.hand.y * Math.PI * 0.25;
+                // 手势控制：根据爆炸程度混合控制方式
+                if (scatter > 0.3) {
+                    // 爆炸时，手位置控制旋转方向
+                    const targetRotY = STATE.hand.x * Math.PI * 0.9 * scatter; 
+                    const targetRotX = STATE.hand.y * Math.PI * 0.25 * scatter;
                     STATE.rotation.y += (targetRotY - STATE.rotation.y) * 3.0 * dt;
                     STATE.rotation.x += (targetRotX - STATE.rotation.x) * 3.0 * dt;
                 } else {
+                    // 树状时自动旋转
                     STATE.rotation.y += 0.3 * dt;
                 }
             } else if (STATE.touch.active) {
                 // 触摸/鼠标拖动控制
             } else {
                 // 自动闲置动画
-                if(STATE.mode === 'TREE') {
-                    STATE.rotation.y += 0.3 * dt;
-                    STATE.rotation.x += (0 - STATE.rotation.x) * 2.0 * dt;
-                } else {
-                    STATE.rotation.y += 0.1 * dt; 
-                }
+                const autoRotateSpeed = 0.3 * (1 - scatter * 0.7); // 爆炸时旋转变慢
+                STATE.rotation.y += autoRotateSpeed * dt;
+                STATE.rotation.x += (0 - STATE.rotation.x) * 2.0 * dt;
             }
             mainGroup.rotation.y = STATE.rotation.y;
             mainGroup.rotation.x = STATE.rotation.x;
 
             particleSystem.forEach(p => p.update(dt, STATE.mode, STATE.focusTarget));
             
-            // 更新炫酷粒子效果
+            // 更新粒子效果
             const time = clock.elapsedTime;
-            updateMagicParticles(time);
-            updateSparkles(time);
-            updateRingParticles(time);
+            updateGlowParticles(time, dt);  // 高性能发光粒子
             
             composer.render();
         }

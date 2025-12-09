@@ -923,6 +923,216 @@
         #mode-tip-close:active {
             transform: scale(0.96);
         }
+
+        /* 左下角上传按钮 */
+        #upload-btn {
+            position: fixed;
+            bottom: 30px;
+            left: 20px;
+            width: 55px;
+            height: 55px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, rgba(160, 80, 90, 0.7) 0%, rgba(60, 100, 80, 0.7) 100%);
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(200, 180, 120, 0.6);
+            color: #f0f0f0;
+            font-size: 22px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(100, 60, 70, 0.3);
+            z-index: 100;
+        }
+        #upload-btn:hover {
+            transform: scale(1.1);
+            box-shadow: 0 6px 20px rgba(100, 60, 70, 0.5);
+            border-color: rgba(200, 180, 120, 0.9);
+        }
+
+        /* 图片管理弹窗 */
+        #photo-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(10px);
+            z-index: 300;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        #photo-modal.show {
+            display: flex;
+        }
+        .photo-modal-content {
+            background: linear-gradient(135deg, #1a0a0e 0%, #0a1f14 100%);
+            border: 3px solid #ffd700;
+            border-radius: 20px;
+            padding: 30px;
+            max-width: 600px;
+            width: 100%;
+            max-height: 80vh;
+            overflow-y: auto;
+            scrollbar-width: none;
+            box-shadow: 0 10px 50px rgba(196, 30, 58, 0.5);
+        }
+        .photo-modal-content::-webkit-scrollbar {
+            width: 0;
+            height: 0;
+        }
+        .photo-modal-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid rgba(255, 215, 0, 0.3);
+        }
+        .photo-modal-title {
+            color: #ffd700;
+            font-size: 20px;
+            font-weight: 700;
+            letter-spacing: 2px;
+        }
+        .photo-modal-close {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #c41e3a 0%, #165b33 100%);
+            border: 2px solid #ffd700;
+            color: #ffd700;
+            font-size: 20px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+        .photo-modal-close:hover {
+            transform: rotate(90deg) scale(1.1);
+            background: #ffd700;
+            color: #c41e3a;
+        }
+        .photo-upload-area {
+            margin-bottom: 20px;
+        }
+        .photo-upload-label {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            padding: 20px;
+            border: 2px dashed rgba(255, 215, 0, 0.4);
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.05);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 14px;
+        }
+        .photo-upload-label:hover {
+            border-color: #ffd700;
+            background: rgba(255, 215, 0, 0.1);
+        }
+        .photo-upload-label input {
+            display: none;
+        }
+        .photo-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+            gap: 12px;
+            margin-top: 15px;
+        }
+        .photo-item {
+            position: relative;
+            aspect-ratio: 1;
+            border-radius: 10px;
+            overflow: hidden;
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
+        }
+        .photo-item:hover {
+            border-color: #ffd700;
+            transform: translateY(-3px);
+        }
+        .photo-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .photo-item-delete {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: rgba(255, 77, 79, 0.9);
+            border: none;
+            color: white;
+            font-size: 14px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+        .photo-item:hover .photo-item-delete {
+            opacity: 1;
+        }
+        .photo-empty {
+            text-align: center;
+            padding: 30px;
+            color: rgba(255, 255, 255, 0.5);
+        }
+        .photo-save-btn {
+            width: 100%;
+            padding: 14px;
+            margin-top: 20px;
+            border-radius: 12px;
+            border: none;
+            background: linear-gradient(135deg, #ffd700 0%, #ffed4e 100%);
+            color: #1a1a1a;
+            font-weight: 700;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .photo-save-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 25px rgba(255, 215, 0, 0.5);
+        }
+        .photo-save-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        @media (max-width: 768px) {
+            #upload-btn {
+                bottom: 20px;
+                left: 10px;
+                width: 48px;
+                height: 48px;
+                font-size: 20px;
+            }
+            .photo-modal-content {
+                padding: 20px;
+                max-height: 90vh;
+            }
+            .photo-grid {
+                grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+                gap: 8px;
+            }
+        }
     </style>
     
     <style>
@@ -981,6 +1191,30 @@
     <!-- 隐私说明 -->
     <div id="privacy-notice">
         摄像头仅用于手势识别。
+    </div>
+
+    <!-- 左下角上传按钮 -->
+    <div id="upload-btn" title="管理照片">📷</div>
+
+    <!-- 图片管理弹窗 -->
+    <div id="photo-modal">
+        <div class="photo-modal-content">
+            <div class="photo-modal-header">
+                <div class="photo-modal-title">🎄 照片管理</div>
+                <div class="photo-modal-close">×</div>
+            </div>
+            <div class="photo-upload-area">
+                <label class="photo-upload-label">
+                    <span>📁</span>
+                    <span>点击上传新照片（可多选）</span>
+                    <input type="file" id="photo-input" multiple accept="image/*">
+                </label>
+            </div>
+            <div class="photo-grid" id="photo-grid">
+                <div class="photo-empty">暂无照片，上传一些吧~</div>
+            </div>
+            <button class="photo-save-btn" id="photo-save-btn">保存并刷新</button>
+        </div>
     </div>
 
     <!-- 右下角按钮提示框 -->
@@ -1085,23 +1319,7 @@
     <div id="ui-layer">
         <h1>Merry Christmas</h1>
 
-        <div class="controls-wrapper">
-            <div class="btn-group">
-                <div class="control-btn" id="cam-btn">📷 Enable Gesture</div>
-                <label class="control-btn">
-                    Select Local Folder
-                    <input type="file" id="folder-input" webkitdirectory directory multiple>
-                </label>
-                <label class="control-btn">
-                    Add Local Files
-                    <input type="file" id="file-input" multiple accept="image/*">
-                </label>
-            </div>
-            <div class="hint-text">Cloud Images Loaded. Add local files if needed.</div>
-        </div>
-    <!--
-
-        <!-- 右下角模式切换按钮 - 1列4行 -->
+        <!-- 右下角模式切换按钮 -->
         <div id="mode-bar">
             <div class="mode-btn" onclick="reloadCamera()" title="重载摄像头">📷</div>
             <div class="mode-btn" onclick="setMode('TREE')" title="圣诞树模式">🎄</div>
@@ -1149,11 +1367,9 @@
             }
         };
 
-        const urlParams = new URLSearchParams(window.location.search);
-        const PAGE_USERNAME = (urlParams.get('user') || '').trim().toLowerCase();
-        const SERVER_USER_API = PAGE_USERNAME ? `/api/user/${encodeURIComponent(PAGE_USERNAME)}` : null;
-        const IS_VIEW_ONLY = !!PAGE_USERNAME;
         const IS_WECHAT = /MicroMessenger/i.test(navigator.userAgent || '');
+        let currentPhotos = []; // 当前已有的照片列表
+        let pendingFiles = [];  // 待上传的文件列表
 
         const STATE = {
             mode: 'TREE', 
@@ -1182,12 +1398,9 @@
         if (loaderModelSpan) {
             loaderModelSpan.textContent = HAND_MODEL_NAME;
         }
-        const camBtn = document.getElementById('cam-btn');
         let isCameraRunning = false;
 
         window.toggleUIVisibility = () => {
-            const controls = document.querySelector('.controls-wrapper');
-            if (controls) controls.classList.toggle('ui-hidden');
             const webcam = document.getElementById('webcam-wrapper');
             if (webcam) webcam.classList.toggle('ui-hidden');
             const helpButton = document.getElementById('help-btn');
@@ -1198,6 +1411,8 @@
             if (modeBar) modeBar.classList.toggle('ui-hidden');
             const title = document.querySelector('h1');
             if (title) title.classList.toggle('ui-hidden');
+            const uploadBtn = document.getElementById('upload-btn');
+            if (uploadBtn) uploadBtn.classList.toggle('ui-hidden');
         };
 
         window.setMode = (mode) => {
@@ -1222,8 +1437,6 @@
                 }
                 isCameraRunning = false;
                 document.getElementById('webcam-wrapper').style.opacity = 0;
-                camBtn.innerText = "📷 Enable Gesture";
-                camBtn.classList.remove('active');
                 showToast('摄像头已关闭', 'info', 2000);
             } else {
                 // 重新启动摄像头
@@ -1264,31 +1477,27 @@
             createTextures();
             createParticles();
             createDust();
+            createMagicParticles();   // 魔法粒子
+            createSparkles();          // 闪烁星光
+            createRingParticles();     // 光环粒子
             loadPredefinedImages();
             setupPostProcessing();
             setupEvents();
-            setupTouchAndClick(); 
-
-            if (IS_VIEW_ONLY) {
-                const controls = document.querySelector('.controls-wrapper');
-                if (controls) controls.style.display = 'none';
-                const hint = document.querySelector('.hint-text');
-                if (hint) hint.style.display = 'none';
-                if (camBtn && !IS_WECHAT) {
-                    // 非微信环境下，自动打开摄像头（浏览器仍会弹出权限提示）
-                    initMediaPipe();
-                } else if (IS_WECHAT) {
-                    showToast('请点击右侧摄像头按钮以开启手势识别', 'info', 4000);
-                }
-            }
+            setupTouchAndClick();
+            setupPhotoModal(); // 设置图片管理弹窗
 
             const loader = document.getElementById('loader');
             loader.style.opacity = 0;
             setTimeout(() => {
                 loader.remove();
                 if (typeof showModeTip === 'function') {
-                    // 稍微延迟，让右下角按钮先渲染出来
                     setTimeout(() => showModeTip(), 300);
+                }
+                // 页面加载完成后尝试自动启动摄像头
+                if (!IS_WECHAT) {
+                    setTimeout(() => initMediaPipe(), 500);
+                } else {
+                    showToast('请点击右下角📷按钮开启手势识别', 'info', 4000);
                 }
             }, 800);
 
@@ -1603,6 +1812,183 @@
             }
         }
 
+        // 创建魔法粒子系统（螺旋上升的发光粒子）
+        let magicParticles = [];
+        function createMagicParticles() {
+            const colors = [0xff6b6b, 0xffd93d, 0x6bcb77, 0x4d96ff, 0xff6bff, 0xffffff];
+            const particleCount = 150;
+            
+            for (let i = 0; i < particleCount; i++) {
+                const geo = new THREE.SphereGeometry(0.05 + Math.random() * 0.08, 8, 8);
+                const color = colors[Math.floor(Math.random() * colors.length)];
+                const mat = new THREE.MeshBasicMaterial({ 
+                    color: color, 
+                    transparent: true, 
+                    opacity: 0.8 
+                });
+                const mesh = new THREE.Mesh(geo, mat);
+                
+                // 初始位置在树的范围内
+                const angle = Math.random() * Math.PI * 2;
+                const radius = 2 + Math.random() * 6;
+                const y = -12 + Math.random() * 24;
+                mesh.position.set(
+                    Math.cos(angle) * radius,
+                    y,
+                    Math.sin(angle) * radius
+                );
+                
+                mainGroup.add(mesh);
+                magicParticles.push({
+                    mesh,
+                    baseAngle: angle,
+                    baseRadius: radius,
+                    speed: 0.3 + Math.random() * 0.5,
+                    phase: Math.random() * Math.PI * 2,
+                    color: color
+                });
+            }
+        }
+
+        // 创建闪烁星光粒子
+        let sparkleParticles = [];
+        function createSparkles() {
+            const sparkleCount = 80;
+            
+            for (let i = 0; i < sparkleCount; i++) {
+                // 创建十字形星光
+                const group = new THREE.Group();
+                const mat = new THREE.MeshBasicMaterial({ 
+                    color: 0xffffff, 
+                    transparent: true, 
+                    opacity: 0.9 
+                });
+                
+                const h1 = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.15, 0.02), mat);
+                const h2 = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.02, 0.02), mat);
+                group.add(h1);
+                group.add(h2);
+                
+                // 随机位置在树形范围内
+                const t = Math.random();
+                const y = (t * CONFIG.particles.treeHeight) - (CONFIG.particles.treeHeight / 2);
+                const maxR = CONFIG.particles.treeRadius * (1.0 - t) + 1;
+                const angle = Math.random() * Math.PI * 2;
+                const r = Math.random() * maxR;
+                
+                group.position.set(
+                    Math.cos(angle) * r,
+                    y,
+                    Math.sin(angle) * r
+                );
+                
+                mainGroup.add(group);
+                sparkleParticles.push({
+                    mesh: group,
+                    phase: Math.random() * Math.PI * 2,
+                    twinkleSpeed: 2 + Math.random() * 4
+                });
+            }
+        }
+
+        // 创建光环粒子（围绕树旋转的光带）
+        let ringParticles = [];
+        function createRingParticles() {
+            const ringCount = 5; // 光环层数
+            const particlesPerRing = 40;
+            const colors = [0xffd700, 0xff6b6b, 0x4ecdc4, 0xffffff, 0xff69b4];
+            
+            for (let ring = 0; ring < ringCount; ring++) {
+                const y = -8 + ring * 5;
+                const radius = 6 - ring * 0.8;
+                const color = colors[ring];
+                
+                for (let i = 0; i < particlesPerRing; i++) {
+                    const geo = new THREE.SphereGeometry(0.06, 6, 6);
+                    const mat = new THREE.MeshBasicMaterial({ 
+                        color: color, 
+                        transparent: true, 
+                        opacity: 0.7 
+                    });
+                    const mesh = new THREE.Mesh(geo, mat);
+                    
+                    const angle = (i / particlesPerRing) * Math.PI * 2;
+                    mesh.position.set(
+                        Math.cos(angle) * radius,
+                        y,
+                        Math.sin(angle) * radius
+                    );
+                    
+                    mainGroup.add(mesh);
+                    ringParticles.push({
+                        mesh,
+                        ring,
+                        baseAngle: angle,
+                        radius,
+                        y,
+                        speed: 0.5 + ring * 0.2
+                    });
+                }
+            }
+        }
+
+        // 更新魔法粒子
+        function updateMagicParticles(time) {
+            magicParticles.forEach((p, i) => {
+                // 螺旋上升
+                p.mesh.position.y += p.speed * 0.02;
+                if (p.mesh.position.y > 14) {
+                    p.mesh.position.y = -12;
+                }
+                
+                // 螺旋运动
+                const newAngle = p.baseAngle + time * p.speed + p.phase;
+                const wobble = Math.sin(time * 2 + p.phase) * 0.5;
+                p.mesh.position.x = Math.cos(newAngle) * (p.baseRadius + wobble);
+                p.mesh.position.z = Math.sin(newAngle) * (p.baseRadius + wobble);
+                
+                // 闪烁效果
+                p.mesh.material.opacity = 0.4 + Math.sin(time * 3 + p.phase) * 0.4;
+                
+                // 缩放脉动
+                const scale = 0.8 + Math.sin(time * 4 + p.phase) * 0.3;
+                p.mesh.scale.setScalar(scale);
+            });
+        }
+
+        // 更新闪烁星光
+        function updateSparkles(time) {
+            sparkleParticles.forEach(p => {
+                // 闪烁
+                const twinkle = Math.sin(time * p.twinkleSpeed + p.phase);
+                p.mesh.children.forEach(child => {
+                    child.material.opacity = 0.3 + twinkle * 0.6;
+                });
+                
+                // 旋转
+                p.mesh.rotation.z = time * 2 + p.phase;
+                
+                // 缩放脉动
+                const scale = 0.5 + twinkle * 0.5;
+                p.mesh.scale.setScalar(scale);
+            });
+        }
+
+        // 更新光环粒子
+        function updateRingParticles(time) {
+            ringParticles.forEach(p => {
+                const angle = p.baseAngle + time * p.speed;
+                p.mesh.position.x = Math.cos(angle) * p.radius;
+                p.mesh.position.z = Math.sin(angle) * p.radius;
+                
+                // 上下波动
+                p.mesh.position.y = p.y + Math.sin(angle * 3) * 0.3;
+                
+                // 透明度变化
+                p.mesh.material.opacity = 0.4 + Math.sin(angle * 2) * 0.3;
+            });
+        }
+
         function addPhotoToScene(texture) {
             const frameGeo = new THREE.BoxGeometry(1.4, 1.4, 0.05);
             const frameMat = new THREE.MeshStandardMaterial({ color: CONFIG.colors.champagneGold, metalness: 1.0, roughness: 0.1 });
@@ -1644,63 +2030,177 @@
         async function loadPredefinedImages() {
             const loader = new THREE.TextureLoader();
 
-            if (SERVER_USER_API) {
-                try {
-                    const resp = await fetch(SERVER_USER_API);
-                    if (resp.ok) {
-                        const data = await resp.json();
-                        if (Array.isArray(data.photos)) {
-                            data.photos.forEach((url) => {
-                                loader.load(
-                                    url,
-                                    (t) => {
-                                        t.colorSpace = THREE.SRGBColorSpace;
-                                        addPhotoToScene(t);
-                                    },
-                                    undefined,
-                                    () => {}
-                                );
-                            });
-                        }
-                        if (data.blessing) {
-                            const titleEl = document.querySelector('h1');
-                            if (titleEl) titleEl.textContent = data.blessing;
-                        }
-                        return;
+            // 从服务器加载照片
+            try {
+                const resp = await fetch('/api/photos');
+                if (resp.ok) {
+                    const data = await resp.json();
+                    if (Array.isArray(data.photos)) {
+                        currentPhotos = data.photos;
+                        data.photos.forEach((url) => {
+                            loader.load(
+                                url,
+                                (t) => {
+                                    t.colorSpace = THREE.SRGBColorSpace;
+                                    addPhotoToScene(t);
+                                },
+                                undefined,
+                                () => {}
+                            );
+                        });
                     }
-                } catch (e) {
-                    console.warn('Failed to load server photos', e);
                 }
-            }
-            
-            // 1. 优先加载配置的云端图片
-            if (CONFIG.preload.useCloudImages && CONFIG.preload.cloudImageUrls.length > 0) {
-                CONFIG.preload.cloudImageUrls.forEach(url => {
-                    loader.load(
-                        url,
-                        (t) => {
-                            t.colorSpace = THREE.SRGBColorSpace;
-                            addPhotoToScene(t);
-                        },
-                        undefined,
-                        (err) => {
-                            console.warn("Failed to load cloud image:", url);
-                        }
-                    );
-                });
-            }
-
-            // 2. 如果开启了本地自动扫描 (CONFIG.preload.autoScanLocal 为 true)
-            if (CONFIG.preload.autoScanLocal) {
-                for (let i = 1; i <= CONFIG.preload.scanCount; i++) {
-                    const pathJpg = `./images/(${i}).jpg`;
-                    const pathPng = `./images/(${i}).png`;
-                    loader.load(pathJpg, (t) => { t.colorSpace = THREE.SRGBColorSpace; addPhotoToScene(t); }, undefined, () => {
-                             loader.load(pathPng, (t) => { t.colorSpace = THREE.SRGBColorSpace; addPhotoToScene(t); }, undefined, () => {} );
-                    });
-                }
+            } catch (e) {
+                console.warn('Failed to load photos', e);
             }
         }
+
+        // 清除所有照片并重新加载
+        function reloadPhotos() {
+            // 清除现有的照片mesh
+            const photosToRemove = particleSystem.filter(p => p.type === 'PHOTO');
+            photosToRemove.forEach(p => {
+                photoMeshGroup.remove(p.mesh);
+            });
+            particleSystem = particleSystem.filter(p => p.type !== 'PHOTO');
+            
+            // 重新加载
+            loadPredefinedImages();
+        }
+
+        // 图片管理弹窗逻辑
+        function setupPhotoModal() {
+            const uploadBtn = document.getElementById('upload-btn');
+            const photoModal = document.getElementById('photo-modal');
+            const modalClose = photoModal.querySelector('.photo-modal-close');
+            const photoInput = document.getElementById('photo-input');
+            const photoGrid = document.getElementById('photo-grid');
+            const saveBtn = document.getElementById('photo-save-btn');
+
+            // 打开弹窗
+            uploadBtn.addEventListener('click', () => {
+                pendingFiles = [];
+                renderPhotoGrid();
+                photoModal.classList.add('show');
+            });
+
+            // 关闭弹窗
+            modalClose.addEventListener('click', () => {
+                photoModal.classList.remove('show');
+            });
+            photoModal.addEventListener('click', (e) => {
+                if (e.target === photoModal) {
+                    photoModal.classList.remove('show');
+                }
+            });
+
+            // 选择文件
+            photoInput.addEventListener('change', (e) => {
+                const files = Array.from(e.target.files);
+                pendingFiles = [...pendingFiles, ...files];
+                renderPhotoGrid();
+                photoInput.value = '';
+            });
+
+            // 保存按钮
+            saveBtn.addEventListener('click', async () => {
+                if (pendingFiles.length === 0) {
+                    photoModal.classList.remove('show');
+                    return;
+                }
+
+                saveBtn.disabled = true;
+                saveBtn.textContent = '上传中...';
+
+                const formData = new FormData();
+                pendingFiles.forEach(f => formData.append('photos', f));
+
+                try {
+                    const resp = await fetch('/api/photos', {
+                        method: 'POST',
+                        body: formData
+                    });
+                    const data = await resp.json();
+                    if (data.ok) {
+                        currentPhotos = data.photos;
+                        showToast('上传成功！', 'success', 2000);
+                        reloadPhotos();
+                        photoModal.classList.remove('show');
+                    } else {
+                        showToast('上传失败: ' + (data.error || '未知错误'), 'error');
+                    }
+                } catch (err) {
+                    showToast('网络错误', 'error');
+                }
+
+                pendingFiles = [];
+                saveBtn.disabled = false;
+                saveBtn.textContent = '保存并刷新';
+            });
+        }
+
+        // 渲染图片网格
+        function renderPhotoGrid() {
+            const photoGrid = document.getElementById('photo-grid');
+            const allItems = [];
+
+            // 已有的照片
+            currentPhotos.forEach((url, index) => {
+                allItems.push(`
+                    <div class="photo-item">
+                        <img src="${url}" alt="照片">
+                        <button class="photo-item-delete" onclick="deletePhoto('${url}', ${index})">×</button>
+                    </div>
+                `);
+            });
+
+            // 待上传的文件预览
+            pendingFiles.forEach((file, index) => {
+                const previewUrl = URL.createObjectURL(file);
+                allItems.push(`
+                    <div class="photo-item" style="border-color: rgba(255, 215, 0, 0.5);">
+                        <img src="${previewUrl}" alt="待上传">
+                        <button class="photo-item-delete" onclick="removePendingFile(${index})">×</button>
+                    </div>
+                `);
+            });
+
+            if (allItems.length === 0) {
+                photoGrid.innerHTML = '<div class="photo-empty">暂无照片，上传一些吧~</div>';
+            } else {
+                photoGrid.innerHTML = allItems.join('');
+            }
+        }
+
+        // 删除已有照片
+        window.deletePhoto = async (url, index) => {
+            if (!confirm('确定删除这张照片吗？')) return;
+            
+            try {
+                const resp = await fetch('/api/photos/delete', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ photoUrl: url })
+                });
+                const data = await resp.json();
+                if (data.ok) {
+                    currentPhotos = data.photos;
+                    renderPhotoGrid();
+                    reloadPhotos();
+                    showToast('删除成功', 'success', 2000);
+                } else {
+                    showToast('删除失败', 'error');
+                }
+            } catch (err) {
+                showToast('网络错误', 'error');
+            }
+        };
+
+        // 移除待上传的文件
+        window.removePendingFile = (index) => {
+            pendingFiles.splice(index, 1);
+            renderPhotoGrid();
+        };
 
         // --- MEDIAPIPE ---
         // Toast 通知函数
@@ -1755,33 +2255,39 @@
         async function initMediaPipe() {
             if (isCameraRunning) return;
 
+            console.log('initMediaPipe called');
+            showToast('正在初始化摄像头...', 'info', 2000);
+
             // 显示加载提示
             showLoadingToast('Loading AI Vision...');
 
-            camBtn.innerText = "Initializing...";
-            debugInfo.innerText = "Loading AI models...";
             video = document.getElementById('webcam');
             try {
+                console.log('Loading FilesetResolver...');
                 // 加载 Vision 任务
                 const vision = await FilesetResolver.forVisionTasks("https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.3/wasm");
+                console.log('FilesetResolver loaded');
 
                 // 更新提示
                 showLoadingToast('Loading Hand Model...');
+                console.log('Loading HandLandmarker...');
 
                 handLandmarker = await HandLandmarker.createFromOptions(vision, {
                     baseOptions: { modelAssetPath: `https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task`, delegate: "GPU" },
                     runningMode: "VIDEO", numHands: 1
                 });
+                console.log('HandLandmarker loaded');
 
                 // 更新提示
                 showLoadingToast('Initializing Camera...');
+                console.log('Requesting camera...');
 
                 const constraints = { video: { facingMode: "user", width: { ideal: 640 }, height: { ideal: 480 } } };
                 const stream = await navigator.mediaDevices.getUserMedia(constraints);
+                console.log('Camera stream obtained');
                 video.srcObject = stream;
 
                 const startPredict = () => {
-                    // 某些移动端需要显式 play 才会开始渲染
                     const playPromise = video.play && video.play();
                     if (playPromise && typeof playPromise.catch === 'function') {
                         playPromise.catch(() => {});
@@ -1802,22 +2308,21 @@
                     hideLoadingToast();
                 }, 1500);
 
-                debugInfo.innerText = "Gesture Active: Show Hand";
-                camBtn.innerText = "Gesture Active";
-                camBtn.classList.add('active');
+                showToast('手势识别已启动！', 'success', 2000);
                 isCameraRunning = true;
+                console.log('Camera initialized successfully');
             } catch(e) {
-                console.warn("Camera error:", e);
+                console.error("Camera error:", e);
                 hideLoadingToast();
-                let msg = "Camera Error: " + e.name;
+                let msg = "摄像头错误: " + (e.message || e.name);
                 if (e.name === 'NotAllowedError' || e.name === 'PermissionDeniedError') {
                     msg = "请允许摄像头访问权限！";
                 } else if (window.location.protocol !== 'https:' && window.location.hostname !== 'localhost') {
                     msg = "摄像头需要 HTTPS 协议！";
+                } else if (e.name === 'NotFoundError') {
+                    msg = "未找到摄像头设备！";
                 }
-                debugInfo.innerText = msg;
-                showToast(msg, 'error', 4000);
-                camBtn.innerText = "Retry Camera";
+                showToast(msg, 'error', 5000);
             }
         }
 
@@ -1868,9 +2373,6 @@
                 renderer.setSize(window.innerWidth, window.innerHeight);
                 composer.setSize(window.innerWidth, window.innerHeight);
             });
-            document.getElementById('file-input').addEventListener('change', handleImageUpload);
-            document.getElementById('folder-input').addEventListener('change', handleImageUpload);
-            camBtn.addEventListener('click', () => { initMediaPipe(); });
 
             // 帮助按钮和弹窗控制
             const helpBtn = document.getElementById('help-btn');
@@ -1935,6 +2437,13 @@
             mainGroup.rotation.x = STATE.rotation.x;
 
             particleSystem.forEach(p => p.update(dt, STATE.mode, STATE.focusTarget));
+            
+            // 更新炫酷粒子效果
+            const time = clock.elapsedTime;
+            updateMagicParticles(time);
+            updateSparkles(time);
+            updateRingParticles(time);
+            
             composer.render();
         }
         init();
